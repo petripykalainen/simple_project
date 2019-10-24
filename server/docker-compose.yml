@@ -3,6 +3,7 @@ version: '3'
 services:
   
   simple-web:
+    entrypoint: ["/bin/sh", "./entrypoint.sh"]
     build: .
     depends_on: 
       - db

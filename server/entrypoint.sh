@@ -1,4 +1,3 @@
-#!/bin/bash
 npm install
-npx sequelize db:migrate
+npx sequelize-cli db:migrate
 npm run dev
