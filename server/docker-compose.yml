@@ -1,20 +1,20 @@
 version: '3'
 
 services:
-
+  
+  simple-web:
+    build: .
+    depends_on: 
+      - db
+    ports: 
+      - "8080:3001"
   db:
     image: postgres
     environment:
-      POSTGRES_PASSWORD: 'secretpassword'
-      POSTGRES_USER: 'pguser'
-      POSTGRES_DB: 'pguser_db'
-    volumes:
-      - ./pgdata:/var/lib/postgresql/data:z # SELinux workaround
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_USER: pguser
+      POSTGRES_DB: secretdb
+    volumes:    
+      - ./pgdata:/var/lib/postgresql/data:z # SELinux workaround 
     ports:
-      - 5432:5432
-  
-  # web:
-    # image: node-backend
-    # depends_on: db
-    # ports: "4000:3001"
-
+      - "5432:5432"
