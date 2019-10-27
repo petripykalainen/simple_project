@@ -25,11 +25,11 @@ const port = 3001 || process.env.port;
 app.use(Express.urlencoded({extended: true}));
 app.use(Express.json());
 
-
-
 app.get('/', (req, res) => {
   res.json({msg: "Hello world"});
 });
+
+app.post('/login')
 
 app.get('/users', (req, res) => {
   User.findAll().then((users) => {
@@ -76,4 +76,3 @@ app.delete('/user', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running at port ${port}`);
 });
-
