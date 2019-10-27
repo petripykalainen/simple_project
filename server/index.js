@@ -1,13 +1,9 @@
 const Express = require('express');
 const db = require('./models');
+const Bcrypt = require('bcryptjs');
+
 const User = db.User;
 require('dotenv').config();
-
-// Option 1: Passing parameters separately
-// const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
-//   host: process.env.DB_HOST,
-//   dialect: 'postgres'
-// });
 
 db.sequelize
   .authenticate()
@@ -25,11 +21,29 @@ const port = 3001 || process.env.port;
 app.use(Express.urlencoded({extended: true}));
 app.use(Express.json());
 
+// Routes
 app.get('/', (req, res) => {
   res.json({msg: "Hello world"});
 });
 
-app.post('/login')
+app.post('/login', (req, res) => {
+  // Check if users exists
+  let { email, password } = req.body.user;
+  console.log(email);
+  User.findOne({where : {email}})
+    .then((result) => {
+      if (!result) {
+        res.json({msg: 'No such user exists!'})
+      } else {
+        // Check if password is correct
+        var correctpw = Bcrypt.compareSync(password, result.password);
+        res.json(correctpw);
+      }
+    })
+    .catch((err) => {
+      throw err;
+    });
+});
 
 app.get('/users', (req, res) => {
   User.findAll().then((users) => {
@@ -40,22 +54,21 @@ app.get('/users', (req, res) => {
 });
 
 app.post('/user', (req, res) => {
-  // console.log(req.body);
-  // res.json(req.body);
-  // User.create({firstName: req.body.firstName, lastName: req.body.lastName, email: req.body.email})
-  let {firstName, lastName, email} = req.body.user;
-  // User.findOne({where: { email }}).then((result) => {
-  //   console.log(result);
-  //   res.json({result})
-  // });
-  User.findOrCreate({where:{email}, defaults: { firstName, lastName }})
+  
+  let {firstName, lastName, email, password} = req.body.user;
+  
+  let salt = Bcrypt.genSaltSync(10);
+  let hash = Bcrypt.hashSync(password, salt);
+  console.log(hash);
+  
+  User.findOrCreate({where:{email}, defaults: { firstName, lastName, password: hash }})
     .then(([user, created]) => {
       if (created) {
         res.json({msg: 'Created new user', created});
       } else {
         res.json({msg: 'User already exists', user});
       }
-    })
+    });
 });
 
 app.delete('/user', (req, res) => {
