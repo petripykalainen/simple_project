@@ -1,6 +1,8 @@
 const Express = require('express');
 const db = require('./models');
 const Bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 const User = db.User;
 require('dotenv').config();
@@ -20,16 +22,17 @@ const app = Express();
 const port = 3001 || process.env.port;
 app.use(Express.urlencoded({extended: true}));
 app.use(Express.json());
+app.use(cookieParser());
 
 // Routes
 app.get('/', (req, res) => {
-  res.json({msg: "Hello world"});
+  return res.json({msg: "Hello world"});
 });
 
 app.post('/login', (req, res) => {
   // Check if users exists
   let { email, password } = req.body.user;
-  console.log(email);
+
   User.findOne({where : {email}})
     .then((result) => {
       if (!result) {
@@ -37,12 +40,33 @@ app.post('/login', (req, res) => {
       } else {
         // Check if password is correct
         var correctpw = Bcrypt.compareSync(password, result.password);
-        res.json(correctpw);
+        if (!correctpw) {
+          res.json({msg: 'Incorrect password!'})
+        } else {
+          let token = jwt.sign({token: email}, process.env.JWT_SECRET, { 
+            algorithm: 'HS512',
+            expiresIn: '1min'
+          });
+          console.log(`Token is: ${token}`);
+          res.cookie('token', token, { httpOnly: true });
+          res.json({token});
+        }
       }
     })
     .catch((err) => {
       throw err;
     });
+});
+
+app.get('/secretpath', (req, res) => {
+  // confirm valid token
+  let token = req.cookies['token'];
+  try {
+    let decodedtoken = jwt.verify(token, process.env.JWT_SECRET);
+    return res.json({msg: 'Valid token'});
+  } catch (err) {
+    return res.json({msg: 'invalid token'});
+  }
 });
 
 app.get('/users', (req, res) => {
