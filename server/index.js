@@ -4,6 +4,8 @@ const Bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
+const database = require('./db_sequelize.js');
+
 const User = db.User;
 require('dotenv').config();
 
@@ -69,12 +71,20 @@ app.get('/secretpath', (req, res) => {
   }
 });
 
-app.get('/users', (req, res) => {
-  User.findAll().then((users) => {
-    res.json({
-      users
-    });
-  });
+app.get('/users', async (req, res) => {
+  try {
+    const users = await database.GetUsers();
+    return res.json(users);
+  } catch (err) {
+    console.log(err)
+    return res.json(err);
+  }
+
+  // User.findAll().then((users) => {
+  //   res.json({
+  //     users
+  //   });
+  // });
 });
 
 app.post('/user', (req, res) => {
