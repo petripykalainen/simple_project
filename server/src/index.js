@@ -1,12 +1,18 @@
 const Express = require('express');
-const db = require('./models');
+const db = require('./../models');
+const {User} = db;
 const Bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const passport = require('passport');
 
 const database = require('./db_sequelize.js');
+// const initializePassport = 
+require('./passport')(passport);
 
-const User = db.User;
+// initializePassport(passport);
+const authenticate = passport.authenticate('local', {session: false});
+
 require('dotenv').config();
 
 db.sequelize
@@ -26,48 +32,71 @@ app.use(Express.urlencoded({extended: true}));
 app.use(Express.json());
 app.use(cookieParser());
 
+
 // Routes
 app.get('/', (req, res) => {
   return res.json({msg: "Hello world"});
 });
 
-app.post('/login', (req, res) => {
-  // Check if users exists
-  let { email, password } = req.body.user;
+app.post('/login', authenticate,  (req, res) => {
+  let {id, email} = req.user;
+  let token = jwt.sign({id, email}, process.env.JWT_SECRET, { 
+    algorithm: 'HS512',
+    expiresIn: '1min'
+  });
+  console.log(`Token is: ${token}`);
+  res.cookie('access-token', token, { httpOnly: true });
+  return res.json({token});
+  // return res.json(req.user);
 
-  User.findOne({where : {email}})
-    .then((result) => {
-      if (!result) {
-        res.json({msg: 'No such user exists!'})
-      } else {
-        // Check if password is correct
-        var correctpw = Bcrypt.compareSync(password, result.password);
-        if (!correctpw) {
-          res.json({msg: 'Incorrect password!'})
-        } else {
-          let token = jwt.sign({token: email}, process.env.JWT_SECRET, { 
-            algorithm: 'HS512',
-            expiresIn: '1min'
-          });
-          console.log(`Token is: ${token}`);
-          res.cookie('token', token, { httpOnly: true });
-          res.json({token});
-        }
-      }
-    })
-    .catch((err) => {
-      throw err;
-    });
+  
+  // // Check if users exists
+  // let { email, password } = req.body.user;
+
+  // User.findOne({where : {email}})
+  //   .then((result) => {
+  //     if (!result) {
+  //       res.json({msg: 'No such user exists!'})
+  //     } else {
+  //       // Check if password is correct
+  //       var correctpw = Bcrypt.compareSync(password, result.password);
+  //       if (!correctpw) {
+  //         res.json({msg: 'Incorrect password!'})
+  //       } else {
+  
+  //       }
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     throw err;
+  //   });
+
 });
 
 app.get('/secretpath', (req, res) => {
+  
   // confirm valid token
-  let token = req.cookies['token'];
-  try {
-    let decodedtoken = jwt.verify(token, process.env.JWT_SECRET);
-    return res.json({msg: 'Valid token'});
-  } catch (err) {
-    return res.json({msg: 'invalid token'});
+  let token = req.cookies['access-token'];
+
+  if (token) {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        return res.json({
+          msg: 'Invalid token'
+        });
+      } else {
+        return res.json({
+          msg: 'Valid token',
+          token: decoded
+        });
+      }
+
+    });
+  }
+  else {
+    return res.json({
+      msg: 'No token provided token'          
+    });
   }
 });
 
@@ -98,9 +127,9 @@ app.post('/user', (req, res) => {
   User.findOrCreate({where:{email}, defaults: { firstName, lastName, password: hash }})
     .then(([user, created]) => {
       if (created) {
-        res.json({msg: 'Created new user', created});
+        return res.json({msg: 'Created new user', created});
       } else {
-        res.json({msg: 'User already exists', user});
+        return res.json({msg: 'User already exists', user});
       }
     });
 });

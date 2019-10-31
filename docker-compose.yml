@@ -4,11 +4,13 @@ services:
   
   simple-web:
     entrypoint: ["/bin/sh", "./entrypoint.sh"]
-    build: .
+    build: ./server
     depends_on: 
       - db
     environment:
       DB_HOST: db
+    volumes:
+      - ./server/src:/usr/app/src:z # SELinux workaround 
     ports: 
       - "8080:3001"
   db:
@@ -18,6 +20,6 @@ services:
       POSTGRES_USER: pguser
       POSTGRES_DB: secretdb
     volumes:    
-      - ./pgdata:/var/lib/postgresql/data:z # SELinux workaround 
+      - ./server/pgdata:/var/lib/postgresql/data:z # SELinux workaround 
     ports:
       - "5432:5432"
