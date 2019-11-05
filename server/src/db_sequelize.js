@@ -9,7 +9,7 @@ module.exports = {
   },
   GetUserbyEmail: async (email) => {
     console.log('INSIDE DB!')
-    let user = await User.findOne({where:{email}})
+    let user = await User.findOne({ where: { email } })
     return user;
   }
 
