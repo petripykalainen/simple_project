@@ -67,11 +67,13 @@ app.get('/secretpath', ValidateTokens, (req, res) => {
   if (req.isAuth) {
     return res.json({
       msg: req.msg,
+      jwtError: req.jwtError,
       isAuth: req.isAuth
     });
   }
   return res.json({
     msg: req.msg,
+    jwtError: req.jwtError,
     isAuth: req.isAuth
   });
 
