@@ -4,13 +4,32 @@ const User = db.User;
 module.exports = {
 
   GetUsers: async () => {
-    let users = await User.findAll();
-    return users;
+    try {
+      return await User.findAll();
+      // return await User.findAll({attributes: ['id','firstName', 'lastName', 'email']});
+    } catch (err) {
+      throw new Error('DB error!')
+    }
   },
-  GetUserbyEmail: async (email) => {
-    console.log('INSIDE DB!')
-    let user = await User.findOne({ where: { email } })
-    return user;
+  GetUser: async (id) => {
+    try {
+      return await User.findByPk(
+        id,
+        {attributes: ['id','firstName', 'lastName', 'email']}
+      );
+    } catch (err) {
+      throw new Error('DB error!')      
+    }
+  },
+  GetUserToken: async (id) => {
+    try {
+      return await User.findByPk(
+        id,
+        {attributes: ['id','refreshtoken', 'tokencount']}
+      );  
+    } catch (err) {
+      throw new Error('DB error!')      
+    }
   }
-
+  
 }

@@ -8,16 +8,16 @@ const passport = require('passport');
 
 const CreateAccessToken = require('./tokens').CreateAccessToken;
 const CreateRefreshToken = require('./tokens').CreateRefreshToken;
-const ValidateTokens = require('./tokens').ValidateTokens;
+const {ValidateTokens} = require('./middleware.js');
 
 const database = require('./db_sequelize.js');
 
-const passportJWT = require('./passport').initializeJwt(passport);
+// const passportJWT = require('./passport').initializeJwt(passport);
 const passportLocal = require('./passport').initializeLocal(passport);
 
 // initializePassport(passport);
 const authenticate = passport.authenticate('local', { session: false });
-const checkJwt = passport.authenticate('jwt', {session: false});
+// const checkJwt = passport.authenticate('jwt', {session: false});
 
 require('dotenv').config();
 
@@ -38,7 +38,6 @@ app.use(Express.urlencoded({ extended: true }));
 app.use(Express.json());
 app.use(cookieParser());
 
-
 // Routes
 app.get('/', (req, res) => {
   return res.json({ msg: "Hello world" });
@@ -46,37 +45,25 @@ app.get('/', (req, res) => {
 
 app.post('/login', authenticate, async (req, res) => {
   let { id, email } = req.user;
-  
-  let accessToken = CreateAccessToken(email, id);
-  let refreshToken = CreateRefreshToken(email, id);
+  let refreshToken = CreateRefreshToken(email, id, 0);
+  let accessToken = CreateAccessToken(email, id, 0);
 
-  // console.log(`Access Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
+  User.update({refreshtoken: refreshToken}, {where: {id: req.user.id}});
 
-  res.cookie('access-token', accessToken);
-  res.cookie('refresh-token', refreshToken, { httpOnly: true });
+  let token1 = accessToken.slice(0, accessToken.indexOf('.', (accessToken.indexOf('.')+1))+1);
+  let token2 = accessToken.slice(accessToken.indexOf('.', (accessToken.indexOf('.')+1))+1);
+
+  res.cookie('access-token1', token1, {maxAge: 1000*60*30});  // 30min
+  res.cookie('access-token2', token2, { httpOnly: true });
   
   let authUser = {
-    id: req.user.id,
-    email: req.user.email,
     isAuth: true
   };
   return res.json(authUser);
 });
 
 app.get('/secretpath', ValidateTokens, (req, res) => {
-  if (req.isAuth) {
-    return res.json({
-      msg: req.msg,
-      jwtError: req.jwtError,
-      isAuth: req.isAuth
-    });
-  }
-  return res.json({
-    msg: req.msg,
-    jwtError: req.jwtError,
-    isAuth: req.isAuth
-  });
-
+  return res.json({msg: 'Succesfully authenticated'});
 });
 
 app.get('/users', async (req, res) => {
@@ -88,6 +75,14 @@ app.get('/users', async (req, res) => {
     return res.json(err);
   }
 });
+
+app.get('/user/:id', async (req, res) => {
+  let {id} = req.params;
+  console.log(id);
+  const user = await database.GetUser(id);
+  console.log(user)
+  res.json(user);
+})
 
 app.post('/user', (req, res) => {
 
@@ -122,6 +117,17 @@ app.delete('/user', (req, res) => {
   });
 });
 
-app.listen(port, () => {
+// Error handling
+app.use(function(err, req, res, next) {
+  if (!err) {
+    next();
+  }
+  return res.status(500).json({
+    Error: err.name,
+    Message: err.message
+  });
+});
+
+app.listen(port, (err, req, res, next) => {
   console.log(`Server running at port ${port}`);
 });
