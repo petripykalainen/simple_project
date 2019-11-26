@@ -1,8 +1,16 @@
 version: '3'
 
 services:
-  
-  simple-web:
+  client:
+    build: ./client
+    depends_on:
+      - db
+    volumes:
+      - ./client/src:/usr/app/client/src:z # SELinux workaround
+    ports:
+      - "80:3000"
+
+  backend:
     entrypoint: ["/bin/sh", "./entrypoint.sh"]
     build: ./server
     depends_on: 
@@ -10,7 +18,7 @@ services:
     environment:
       DB_HOST: db
     volumes:
-      - ./server/src:/usr/app/src:z # SELinux workaround 
+      - ./server/src:/usr/app/backend/src:z # SELinux workaround 
     ports: 
       - "8080:3001"
   db:

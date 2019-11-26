@@ -1,9 +1,9 @@
 FROM node:alpine
 
-WORKDIR /usr/app/backend
+WORKDIR /usr/app/client
 
 COPY package.json .
 RUN npm install
 COPY . .
 
-RUN chmod +x ./entrypoint.sh
+CMD ["npm", "run", "start"]
