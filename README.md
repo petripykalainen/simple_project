@@ -6,8 +6,8 @@ Backend uses json webtokens for authentication/authorization with short refresh 
 
 ## Instuctions
 
-run `docker-compose up --build` at root folder
-frontend currently running at port 80, backend at port 8080 on localhost.
+run `docker-compose up --build` at root folder.
+Frontend currently running at port 80, backend at port 8080 on localhost.
 
 ## Todo: 
 
