@@ -13,7 +13,7 @@ const {ValidateTokens} = require('./middleware.js');
 const database = require('./db_sequelize.js');
 
 // const passportJWT = require('./passport').initializeJwt(passport);
-const passportLocal = require('./passport').initializeLocal(passport);
+require('./passport').initializeLocal(passport);
 
 // initializePassport(passport);
 const authenticate = passport.authenticate('local', { session: false });
@@ -33,7 +33,7 @@ db.sequelize
 const app = Express();
 
 // Environment
-const port = 3001 || process.env.port;
+const port = 5000 || process.env.port;
 app.use(Express.urlencoded({ extended: true }));
 app.use(Express.json());
 app.use(cookieParser());
@@ -44,9 +44,11 @@ app.get('/', (req, res) => {
 });
 
 app.post('/login', authenticate, async (req, res) => {
+  console.log('REQUEST USER: ', req.user)
   let { id, email } = req.user;
-  let refreshToken = CreateRefreshToken(email, id, 0);
-  let accessToken = CreateAccessToken(email, id, 0);
+  let accessToken = CreateAccessToken(email, id);
+  let refreshToken = CreateRefreshToken(email, id, accessToken);
+  console.log('REFRESHTOKEN: ', refreshToken.length)
 
   User.update({refreshtoken: refreshToken}, {where: {id: req.user.id}});
 
@@ -60,6 +62,17 @@ app.post('/login', authenticate, async (req, res) => {
     isAuth: true
   };
   return res.json(authUser);
+});
+
+app.get('/logout', (req,res) => {
+  let token1 = req.cookies['access-token1'];
+  let token2 = req.cookies['access-token2'];
+  let decoded = jwt.decode(token1+token2);
+
+  database.RemoveRefreshToken(decoded.id);
+
+  console.log('Logging user out...')
+  res.status(200).clearCookie('access-token1').clearCookie('access-token2').json({status: "Success"});
 });
 
 app.get('/secretpath', ValidateTokens, (req, res) => {
@@ -86,7 +99,7 @@ app.get('/user/:id', async (req, res) => {
 
 app.post('/user', (req, res) => {
 
-  let { firstName, lastName, email, password } = req.body;
+  let { firstName, lastName, email, password } = req.body.user;
 
   let salt = Bcrypt.genSaltSync(10);
   let hash = Bcrypt.hashSync(password, salt);

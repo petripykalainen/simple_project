@@ -20,7 +20,7 @@ services:
     volumes:
       - ./server/src:/usr/app/backend/src:z # SELinux workaround 
     ports: 
-      - "8080:3001"
+      - "8080:5000"
   db:
     image: postgres
     environment:
@@ -29,5 +29,5 @@ services:
       POSTGRES_DB: secretdb
     volumes:    
       - ./server/pgdata:/var/lib/postgresql/data:z # SELinux workaround 
-    ports:
-      - "5432:5432"
+        #    ports:
+        #- "5432:5432"

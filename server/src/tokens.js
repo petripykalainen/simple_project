@@ -13,21 +13,20 @@ module.exports = {
       })
     })
   },
-  CreateAccessToken: (email, id, count) => {
+  CreateAccessToken: (email, id) => {
     let user = {
       id,
-      email,
-      count
+      email
     }
     return jwt.sign(user, process.env.JWT_ACCESS_SECRET, {
       expiresIn: '1min'
     });
   },
-  CreateRefreshToken: (email, id, count) => {
+  CreateRefreshToken: (email, id, accesstoken) => {
     let user = {
       id,
       email,
-      count
+      accesstoken
     }
     return jwt.sign(user, process.env.JWT_REFRESH_SECRET, {
       expiresIn: '1h'
@@ -35,9 +34,8 @@ module.exports = {
   },
   RefreshTokens: (token, res) => {
     let {email, id} = token;
-    let newCount = token.count+1;
-    let refreshToken = module.exports.CreateRefreshToken(email, id, newCount);
-    let accessToken = module.exports.CreateAccessToken(email, id, newCount);
+    let accessToken = module.exports.CreateAccessToken(email, id);
+    let refreshToken = module.exports.CreateRefreshToken(email, id, accessToken);
 
     User.update({refreshtoken: refreshToken}, {where: {id}});
 

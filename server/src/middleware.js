@@ -8,18 +8,20 @@ module.exports = {
     // let token1 = req.headers['authorization'].split(' ')[1];
     let token1 = req.cookies['access-token1'];
     let token2 = req.cookies['access-token2'];
+    let accesstoken;
+    let atoken;
 
     // Check if tokens exists
     if (!token1 || !token2) {
-      throw new Error('Unauthorized');
+      return next(new Error('Unauthorized'))
     }
     
-    let atoken = token1+token2;
+    atoken = token1+token2;
 
     try {
       // Check if token is still valid
-      let accesstoken = await VerifyToken(atoken, process.env.JWT_ACCESS_SECRET);
-      console.log(accesstoken.count)
+      accesstoken = await VerifyToken(atoken, process.env.JWT_ACCESS_SECRET); 
+      console.log('TOKEN IS STILL VALID!')
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
         try {
@@ -33,10 +35,11 @@ module.exports = {
               process.env.JWT_REFRESH_SECRET
             );
 
-            // Check if refreshtoken is valid and count and id match as well
-            console.log(refreshtoken.count, decoded.count)
-            if (refreshtoken.count === decoded.count && refreshtoken.id === decoded.id) {
+            // Check if accesstoken in refreshtoken matches
+            if (refreshtoken.accesstoken === atoken
+                && refreshtoken.id === decoded.id) {
               // Assign new tokens
+              console.log('REFRESHING EXPIRED TOKENS FROM DATABASE')
               RefreshTokens(refreshtoken, res)
               return next();
             }
