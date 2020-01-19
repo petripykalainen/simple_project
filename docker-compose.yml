@@ -1,26 +1,36 @@
 version: '3'
 
 services:
+  nginx:
+    restart: always
+    depends_on:
+      - backend
+      - client
+    build: ./nginx
+    ports:
+      - '80:80'
+
   client:
     build: ./client
     depends_on:
       - db
     volumes:
       - ./client/src:/usr/app/client/src:z # SELinux workaround
-    ports:
-      - "80:3000"
-
+    # ports:
+      # - "3000:3000"
+      
   backend:
     entrypoint: ["/bin/sh", "./entrypoint.sh"]
     build: ./server
-    depends_on: 
+    depends_on:
       - db
     environment:
       DB_HOST: db
     volumes:
       - ./server/src:/usr/app/backend/src:z # SELinux workaround 
-    ports: 
-      - "8080:5000"
+    # ports: 
+      # - "5000:5000"
+
   db:
     image: postgres
     environment:
