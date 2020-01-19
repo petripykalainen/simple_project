@@ -5,6 +5,7 @@ const Bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const passport = require('passport');
+const cors = require('cors');
 
 const CreateAccessToken = require('./tokens').CreateAccessToken;
 const CreateRefreshToken = require('./tokens').CreateRefreshToken;
@@ -38,12 +39,19 @@ app.use(Express.urlencoded({ extended: true }));
 app.use(Express.json());
 app.use(cookieParser());
 
+// CORS
+const corsOptions = {
+  origin: 'http://localhost'
+};
+
+app.use(cors(corsOptions));
+
 // Routes
 app.get('/', (req, res) => {
   return res.json({ msg: "Hello world" });
 });
 
-app.post('/login', authenticate, async (req, res) => {
+app.post('/api/login', authenticate, async (req, res) => {
   console.log('REQUEST USER: ', req.user)
   let { id, email } = req.user;
   let accessToken = CreateAccessToken(email, id);
@@ -64,7 +72,7 @@ app.post('/login', authenticate, async (req, res) => {
   return res.json(authUser);
 });
 
-app.get('/logout', (req,res) => {
+app.get('/api/logout', (req,res) => {
   let token1 = req.cookies['access-token1'];
   let token2 = req.cookies['access-token2'];
   let decoded = jwt.decode(token1+token2);
@@ -75,21 +83,21 @@ app.get('/logout', (req,res) => {
   res.status(200).clearCookie('access-token1').clearCookie('access-token2').json({status: "Success"});
 });
 
-app.get('/secretpath', ValidateTokens, (req, res) => {
+app.get('/api/secretpath', ValidateTokens, (req, res) => {
   return res.json({msg: 'Succesfully authenticated'});
 });
 
-app.get('/users', async (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
     const users = await database.GetUsers();
-    return res.json(users);
+    res.send(users);
   } catch (err) {
     console.log(err)
     return res.json(err);
   }
 });
 
-app.get('/user/:id', async (req, res) => {
+app.get('/api/user/:id', async (req, res) => {
   let {id} = req.params;
   console.log(id);
   const user = await database.GetUser(id);
@@ -97,7 +105,7 @@ app.get('/user/:id', async (req, res) => {
   res.json(user);
 })
 
-app.post('/user', (req, res) => {
+app.post('/api/user', (req, res) => {
 
   let { firstName, lastName, email, password } = req.body.user;
 
@@ -115,7 +123,7 @@ app.post('/user', (req, res) => {
     });
 });
 
-app.delete('/user', (req, res) => {
+app.delete('/api/user', (req, res) => {
   let { email } = req.body;
   User.destroy({
     where: {
