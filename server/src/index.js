@@ -1,6 +1,6 @@
 const Express = require('express');
 const db = require('./../models');
-const { User } = db;
+const { User, Post } = db;
 const Bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
@@ -47,7 +47,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/api/helloworld', (req, res) => {
   return res.json({ msg: "Hello world" });
 });
 
@@ -97,6 +97,16 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+app.get('/api/posts', async (req, res) => {
+  try {
+    const users = await database.GetPosts();
+    res.send(users);
+  } catch (err) {
+    console.log(err)
+    return res.json(err);
+  }
+})
+
 app.get('/api/user/:id', async (req, res) => {
   let {id} = req.params;
   console.log(id);
@@ -121,6 +131,26 @@ app.post('/api/user', (req, res) => {
         return res.json({ msg: 'User already exists', user });
       }
     });
+});
+
+app.post('/api/post', async (req, res) => {
+  let {creatorId, title, text} = req.body.post;
+  let user, post;
+
+  try {
+    // user = await database.GetUser(creatorId);
+    post = await Post.create({creatorId, title, text});
+    return res.status(200).json(post);
+  } catch (err) {
+    let {name, message} = err;
+    return res.status(500).json({
+      error: {
+        name,
+        message
+      }
+    })
+  }
+
 });
 
 app.delete('/api/user', (req, res) => {

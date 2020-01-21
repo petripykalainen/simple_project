@@ -1,5 +1,5 @@
 const db = require('./../models');
-const User = db.User;
+const {User, Post} = db;
 
 module.exports = {
 
@@ -11,15 +11,18 @@ module.exports = {
       throw new Error('DB error!')
     }
   },
-  GetUser: async (id) => {
+  GetPosts: async () => {
     try {
-      return await User.findByPk(
-        id,
-        {attributes: ['id','firstName', 'lastName', 'email']}
-      );
+      return await Post.findAll();
     } catch (err) {
-      throw new Error('DB error!')      
+      throw new Error('DB error!')
     }
+  },
+  GetUser: async (id) => {
+    return await User.findByPk(
+      id,
+      {attributes: ['id','firstName', 'lastName', 'email']}
+    );
   },
   GetUserToken: async (id) => {
     try {
