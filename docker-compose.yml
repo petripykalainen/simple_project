@@ -16,6 +16,7 @@ services:
       - db
     volumes:
       - ./client/src:/usr/app/client/src:z # SELinux workaround
+      - ./client/public:/usr/app/client/public:z
     # ports:
       # - "3000:3000"
       
