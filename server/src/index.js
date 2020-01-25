@@ -9,12 +9,13 @@ const cors = require('cors');
 
 const CreateAccessToken = require('./tokens').CreateAccessToken;
 const CreateRefreshToken = require('./tokens').CreateRefreshToken;
-const {ValidateTokens} = require('./middleware.js');
+// const {ValidateTokens} = require('./middleware');
+const {authorize, authenticate} = require('./auth-middleware')
 
 const database = require('./db_sequelize.js');
 
 require('./passport').initializeLocal(passport);
-const authenticate = passport.authenticate('local', { session: false });
+passport.authenticate('local', { session: false });
 
 require('dotenv').config();
 
@@ -34,6 +35,7 @@ const port = 5000 || process.env.port;
 app.use(Express.urlencoded({ extended: true }));
 app.use(Express.json());
 app.use(cookieParser());
+app.use(authorize);
 
 // CORS
 const corsOptions = {
@@ -50,8 +52,12 @@ app.get('/api/helloworld', (req, res) => {
   return res.json({ msg: "Hello world" });
 });
 
-app.get('/api/secretpath', ValidateTokens, (req, res) => {
-  return res.json({msg: 'Succesfully authenticated'});
+app.get('/api/current_user', (req, res) => {
+  return res.json(req.user)
+});
+
+app.get('/api/secretpath', authenticate, (req, res) => {
+  return res.json({user: req.user});
 });
 
 app.get('/api/users', async (req, res) => {

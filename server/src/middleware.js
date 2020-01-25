@@ -1,4 +1,4 @@
-const {VerifyToken, RefreshTokens} = require('./tokens.js');
+const {VerifyToken, RefreshAccesstoken} = require('./tokens.js');
 const jwt = require('jsonwebtoken');
 const DB = require('./db_sequelize');
 
@@ -22,6 +22,7 @@ module.exports = {
       // Check if token is still valid
       accesstoken = await VerifyToken(atoken, process.env.JWT_ACCESS_SECRET); 
       console.log('TOKEN IS STILL VALID!')
+      return next();
     } catch (err) {
       if (err instanceof jwt.TokenExpiredError) {
         try {
@@ -40,7 +41,7 @@ module.exports = {
                 && refreshtoken.id === decoded.id) {
               // Assign new tokens
               console.log('REFRESHING EXPIRED TOKENS FROM DATABASE')
-              RefreshTokens(refreshtoken, res)
+              RefreshAccesstoken(refreshtoken, res)
               return next();
             }
 

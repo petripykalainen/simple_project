@@ -21,25 +21,28 @@ module.exports = {
   GetUser: async (id) => {
     return await User.findByPk(
       id,
-      {attributes: ['id','firstName', 'lastName', 'email']}
+      {attributes: ['id', 'email']}
     );
   },
   GetUserToken: async (id) => {
     try {
-      return await User.findByPk(
+      let user =  await User.findByPk(
         id,
-        {attributes: ['id','refreshtoken']}
-      );  
+        {attributes: ['refreshtoken']}
+      );
+      return user.refreshtoken;
     } catch (err) {
       throw new Error('DB error!');
     }
   },
-  RemoveRefreshToken: async (id) => {
+  RemoveRefreshToken: async (id) => { 
+    return await User.update({refreshtoken: null}, {where: {id}});
+  },
+  SaveRefreshToken: async (id, refreshtoken) => {
     try {
-      return await User.update({refreshtoken: null}, {where: {id}});
+      return await User.update({refreshtoken}, {where: {id}})
     } catch (err) {
-      throw new Error('DB error!');      
+      throw new Error('DB error!');            
     }
   }
-  
 }

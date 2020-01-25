@@ -1,28 +1,32 @@
 const passport = require('passport');
-const authenticate = passport.authenticate('local', { session: false });
+const jwt = require('jsonwebtoken');
+
+const authenticate = passport.authenticate('local', { session: false }); 
+
 const database = require('./../db_sequelize.js');
+const {CreateRefreshToken, CreateAccessToken} = require('./../tokens');
 
 module.exports = (app) => {
-  app.post('/api/login', authenticate, async (req, res) => {
-    let { id, email } = req.user;
+  app.post('/api/login', authenticate, (req, res) => {
+    let { id, email  } = req.user;
+
     let accessToken = CreateAccessToken(email, id);
     let refreshToken = CreateRefreshToken(email, id, accessToken);
 
-    User.update({refreshtoken: refreshToken}, {where: {id: req.user.id}});
+    database.SaveRefreshToken(id, refreshToken);
 
     let token1 = accessToken.slice(0, accessToken.indexOf('.', (accessToken.indexOf('.')+1))+1);
     let token2 = accessToken.slice(accessToken.indexOf('.', (accessToken.indexOf('.')+1))+1);
 
-    res.cookie('access-token1', token1, {maxAge: 1000*60*30});  // 30min
+    res.cookie('access-token1', token1, {maxAge: 1000*60*30}); // 30min
     res.cookie('access-token2', token2, { httpOnly: true });
     
-    let authUser = {
-      isAuth: true
-    };
-    return res.json(authUser);
+    return res.status(200).json({msg:'ok'})
   });
 
   app.get('/api/logout', (req,res) => {
+    let token1 = req.cookies['access-token1'];
+    let token2 = req.cookies['access-token2'];
     let decoded = jwt.decode(token1+token2);
 
     database.RemoveRefreshToken(decoded.id);
